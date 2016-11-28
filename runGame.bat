@@ -1,1 +1,1 @@
-.\halite.exe -d "30 30" "python MyBot.py" "python RandomBot.py"
+source\halite.exe -d "30 30" "python MyBot.py" "python RandomBot.py"
