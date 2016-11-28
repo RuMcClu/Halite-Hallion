@@ -170,17 +170,6 @@ def move(location,border,origin,wait4,gameMap,ang2,dist2):
                                 im_going_there.append(gameMap.getSite(location, SOUTH))
                                 Move(location,SOUTH)
 
-
-            if map.getDistance(location,origin) > map.height/2 - 1:
-                if angle >= 0 and gameMap.getSite(location, NORTH) != place:
-                    return Move(location, EAST), agress3
-                elif angle <= 0 and gameMap.getSite(location, WEST) != place:
-                    return Move(location, NORTH), agress3
-                elif angle >= 0 and gameMap.getSite(location, EAST) != place:
-                    return Move(location, SOUTH), agress3
-                elif angle <= 0 and gameMap.getSite(location, SOUTH) != place:
-                    return Move(location, WEST), agress3
-
             p_thing = random.random()
 
             if site.strength > 100:
