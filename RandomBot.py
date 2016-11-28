@@ -1,5 +1,5 @@
-from hlt import *
-from networking import *
+from source.hlt import *
+from source.networking import *
 
 myID, gameMap = getInit()
 sendInit("PythonBot")
