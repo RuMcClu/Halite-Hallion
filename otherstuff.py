@@ -3,7 +3,8 @@ import numpy as np
 #logging.basicConfig(filename='debugging\distbug.log',level=logging.DEBUG)
 
 class DistanceCalculator(object):
-    """Process and return a 4D array giving the distances between
+    """Stolen entirely from DexGroves - 
+    Process and return a 4D array giving the distances between
     squares. Indexed by x, y, :, :, will return a 2D array of
     distances that all points lie from the point x, y.
     """
@@ -34,6 +35,6 @@ class DistanceCalculator(object):
         """Offset a matrix by x and y with wraparound.
         Used to position self.dists for other points.
         """
-    
+
         #logging.debug(thing)
         return np.roll(np.roll(M, x, 0), y, 1)

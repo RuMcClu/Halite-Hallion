@@ -1,68 +1,18 @@
 from source.hlt import *
 from source.networking import *
+from WeightCalc import *
 from otherstuff import DistanceCalculator as dc
 import math
 import numpy as np
 
 myID, gameMap = getInit()
-
+gameMap2 = gameMap
 #python addins
 import logging
 logging.basicConfig(filename='debugging\debug.log',level=logging.DEBUG)
 logging.debug('initiating new run')
 
-
-def mapWeight(gameMap,neutral,splash,nearby):
-    neutral_site_mult = neutral
-    splash_mult = splash
-    weight = np.zeros((gameMap.width, gameMap.height), dtype=float)
-    border = []
-    for y in range(gameMap.height):
-        for x in range(gameMap.width):
-            loca = Location(x,y)
-            site = gameMap.getSite(loca)
-            nearbyweight = 0
-            if site.owner != myID:
-                for d in CARDINALS:
-                    neighbour = gameMap.getSite(loca,d)
-                    nearbyweight += neighbour.production
-
-                if site.owner != 0:
-                    new_strength = site.strength
-                    for d in CARDINALS:
-                        neighbour = gameMap.getSite(loca,d)
-                        if neighbour.owner != myID and neighbour.owner != 0:
-                            new_strength = new_strength + neighbour.strength
-                    weight[x,y] = site.production + splash * new_strength + nearby*nearbyweight
-                else:
-                    if site.strength != 0:
-                        weight[x,y] = site.production/(neutral * site.strength) + nearby*nearbyweight
-                    else:
-                        weight[x,y] = site.production/neutral + nearby*nearbyweight
-            else:
-                for d in CARDINALS:
-                    neighbour = gameMap.getSite(loca,d)
-                    if neighbour.owner != myID:
-                        border.append(loca)
-                        break
-    return weight , border
-    #site = gameMap.getSite(prod[last,0])
-
-def getWeight(weightMat,location):
-    weight4 = []
-    for d in CARDINALS:
-        neighbour_loc = gameMap.getLocation(location, d)
-        neigh_y = neighbour_loc.y
-        neigh_x = neighbour_loc.x
-        weight4.append(weightMat[neigh_x][neigh_y])
-    return weight4
-
-
-
-#def iniStrat(location):
-
-
-def move(location,border,origin,wait4,gameMap,ang2,dist2):
+def move(location,border,origin,wait4,gameMap,dist2):
     site = gameMap.getSite(location)
 
     if len(border) < 10:
@@ -105,22 +55,13 @@ def move(location,border,origin,wait4,gameMap,ang2,dist2):
 #                im_going_there.append(neighbour_site)
     #put in here the thing about weight dist find max of the thing
     #    if weight/dist
-        if len(border) < 6:
-            if site.strength < site.production * 7:
-                return Move(location, STILL),
-        #    elif gameMap.getSite(location,d)
-        else:
-            if site.strength < site.production * 8:
-                return Move(location, STILL),
+#        moveprob = [0,0]
+#        angle = ang2[origin.x][origin.y]
+#        moveprob[0] = abs(math.sin(angle))
+#        moveprob[1] = abs(math.cos(angle))
 
-
-        moveprob = [0,0]
-        angle = ang2[origin.x][origin.y]
-        moveprob[0] = abs(math.sin(angle))
-        moveprob[1] = abs(math.cos(angle))
-
-        for place in im_going_there:
-            if site.strength > 130:
+        if site.strength > 150:
+            for place in im_going_there:
                 bordlist = []
                 for bord in border:
                     bordlist.append(dist2[bord.x,bord.y])
@@ -140,81 +81,67 @@ def move(location,border,origin,wait4,gameMap,ang2,dist2):
                         if abs(dx)>=abs(dy):
                             if ((dx > 0 and dx == bord.x - x) or (dx < 0 and dx == x-bord.x)) and gameMap.getSite(location, EAST) != place:
                                 im_going_there.append(gameMap.getSite(location, EAST))
-                                return Move(location,EAST),
+                                if gameMap.getSite(location, EAST).strength > 100:
+                                    return Move(gameMap.getLocation(location, EAST),WEST), Move(location, EAST), gameMap.getLocation(location, EAST)
+                                else:
+                                    return Move(location, EAST),
                             elif ((dx < 0 and dx == bord.x - x) or (dx > 0 and dx == x-bord.x)) and gameMap.getSite(location, WEST) != place:
                                 im_going_there.append(gameMap.getSite(location, WEST))
-                                return Move(location,WEST),
+                                if gameMap.getSite(location, WEST).strength > 100:
+                                    return Move(gameMap.getLocation(location, WEST),EAST), Move(location, WEST), gameMap.getLocation(location, WEST)
+                                else:
+                                    return Move(location, WEST),
                             elif ((dy < 0 and dy == bord.y - y) or (dy > 0 and dy == y-bord.y)) and gameMap.getSite(location, NORTH) != place:
                                 im_going_there.append(gameMap.getSite(location, NORTH))
-                                return Move(location,NORTH),
+                                if gameMap.getSite(location, NORTH).strength > 100:
+                                    return Move(gameMap.getLocation(location, NORTH),SOUTH), Move(location, NORTH), gameMap.getLocation(location, NORTH)
+                                else:
+                                    return Move(location, NORTH),
                             elif ((dy > 0 and dy == bord.y - y) or (dy < 0 and dy == y-bord.y)) and gameMap.getSite(location, SOUTH) != place:
                                 im_going_there.append(gameMap.getSite(location, SOUTH))
-                                return Move(location,SOUTH),
+                                if gameMap.getSite(location, SOUTH).strength > 100:
+                                    return Move(gameMap.getLocation(location, SOUTH),NORTH), Move(location, SOUTH), gameMap.getLocation(location, SOUTH)
+                                else:
+                                    return Move(location, SOUTH),
                         elif abs(dy)>abs(dx):
                             if ((dy < 0 and dy == bord.y - y)) and gameMap.getSite(location, NORTH) != place:
                                 im_going_there.append(gameMap.getSite(location, NORTH))
-                                return Move(location,NORTH),
+                                if gameMap.getSite(location, NORTH).strength > 100:
+                                    return Move(gameMap.getLocation(location, NORTH),SOUTH), Move(location, NORTH), gameMap.getLocation(location, NORTH)
+                                else:
+                                    return Move(location, NORTH),
                             elif ((dy > 0 and dy == bord.y - y)) and gameMap.getSite(location, SOUTH) != place:
                                 im_going_there.append(gameMap.getSite(location, SOUTH))
-                                return Move(location,SOUTH),
+                                if gameMap.getSite(location, SOUTH).strength > 100:
+                                    return Move(gameMap.getLocation(location, SOUTH),NORTH), Move(location, SOUTH), gameMap.getLocation(location, SOUTH)
+                                else:
+                                    return Move(location, SOUTH),
                             elif ((dx > 0 and dx == bord.x - x) or (dx < 0 and dx == x-bord.x)) and gameMap.getSite(location, EAST) != place:
                                 im_going_there.append(gameMap.getSite(location, EAST))
-                                return Move(location,EAST),
+                                if gameMap.getSite(location, EAST).strength > 100:
+                                    return Move(gameMap.getLocation(location, EAST),WEST), Move(location, EAST), gameMap.getLocation(location, EAST)
+                                else:
+                                    return Move(location, EAST),
                             elif ((dx < 0 and dx == bord.x - x) or (dx > 0 and dx == x-bord.x)) and gameMap.getSite(location, WEST) != place:
                                 im_going_there.append(gameMap.getSite(location, WEST))
-                                return Move(location,WEST),
+                                if gameMap.getSite(location, WEST).strength > 100:
+                                    return Move(gameMap.getLocation(location, WEST),EAST), Move(location, WEST), gameMap.getLocation(location, WEST)
+                                else:
+                                    return Move(location, WEST),
             else:
-                p_thing = random.random()
-                if p_thing > 0.2:
-                    return Move(location, STILL),
+            #    p_thing = random.random()
+            #    if p_thing > 0.2:
+                return Move(location, STILL),
 
+        if len(border) < 10:
+            if site.strength < site.production * 7:
+                return Move(location, STILL),
+#    elif gameMap.getSite(location,d)
+        else:
+            if site.strength < site.production * 8:
+                return Move(location, STILL),
 
-            if site.strength > 120:
-                if random.random() > 0.95 * moveprob[0] and gameMap.getSite(location, NORTH) != place:
-                    im_going_there.append(gameMap.getSite(location, NORTH))
-                    return Move(location, NORTH),
-                elif random.random() > 0.92 * moveprob[1] and gameMap.getSite(location, WEST) != place:
-                    im_going_there.append(gameMap.getSite(location, WEST))
-                    return Move(location, WEST),
-                elif random.random() > 0.88 * moveprob[1] and gameMap.getSite(location, EAST) != place:
-                    im_going_there.append(gameMap.getSite(location, EAST))
-                    return Move(location, EAST),
-                elif random.random() > 0.82 * moveprob[0] and gameMap.getSite(location, SOUTH) != place:
-                    im_going_there.append(gameMap.getSite(location, SOUTH))
-                    return Move(location, SOUTH),
-
-            if angle >= 0 and moveprob[0] > moveprob[1] and gameMap.getSite(location, NORTH) != place:
-                if p_thing > 0.2:
-                    im_going_there.append(gameMap.getSite(location, NORTH))
-                    return Move(location, NORTH),
-                elif p_thing > 0.05 and gameMap.getSite(location, WEST) != place:
-                    im_going_there.append(gameMap.getSite(location, WEST))
-                    return Move(location, WEST),
-            elif angle <= 0 and moveprob[1] >= moveprob[0] and gameMap.getSite(location, WEST) != place:
-                if p_thing > 0.2:
-                    im_going_there.append(gameMap.getSite(location, WEST))
-                    return Move(location, WEST),
-                elif p_thing > 0.05 and gameMap.getSite(location, NORTH) != place:
-                    im_going_there.append(gameMap.getSite(location, NORTH))
-                    return Move(location, NORTH),
-            elif angle >= 0 and moveprob[1] >= moveprob[0] and gameMap.getSite(location, EAST) != place:
-                if  p_thing > 0.2:
-                    im_going_there.append(gameMap.getSite(location, EAST))
-                    return Move(location, EAST),
-                elif p_thing > 0.05 and gameMap.getSite(location, SOUTH) != place:
-                    im_going_there.append(gameMap.getSite(location, SOUTH))
-                    return Move(location, SOUTH),
-            elif angle <= 0 and moveprob[0] > moveprob[1] and gameMap.getSite(location, SOUTH) != place:
-                if p_thing > 0.2:
-                    im_going_there.append(gameMap.getSite(location, SOUTH))
-                    return Move(location, SOUTH),
-                elif p_thing > 0.05 and gameMap.getSite(location, EAST) != place:
-                    im_going_there.append(gameMap.getSite(location, EAST))
-                    return Move(location, EAST),
-
-
-
-            return Move(location, STILL),
+        return Move(location, STILL),
 
 
 
@@ -228,11 +155,15 @@ i = 0
 
 #logging.debug(gameMap.playerTag)
 map = GameMap(gameMap.height, gameMap.width, 2)
+logging.debug("weightcalc starting")
+weight_border = mapWeight(gameMap,1.0,1.0,1.0)
+logging.debug("weightcalc done")
+weightMat=weight_border[0]
 #distAngMat = mapDistance(map)
 #distMat = distAngMat[0]
 #angMat = distAngMat[1]
 #logging.debug(distAngMat)
-angMat=np.zeros((gameMap.height, gameMap.width,gameMap.height, gameMap.width),dtype=float)
+#angMat=np.zeros((gameMap.height, gameMap.width,gameMap.height, gameMap.width),dtype=float)
 sendInit("RuBot v1.06")
 
 while True:
@@ -242,7 +173,7 @@ while True:
     agress3 = []
     skip_location = [[23,10]]
     k = 1
-    weight_border = mapWeight(gameMap,1.0,1.0,1.0)
+    weight_border = updateWeight(gameMap,gameMap2,weightMat,1.0,1.0,1.0)
     weightMat=weight_border[0]
     borderList=weight_border[1]
 #    logging.debug(borderList)
@@ -255,8 +186,8 @@ while True:
                     origin = location
                 for kk in range(k):
                     if location != skip_location[kk]:
-                        the_move = move(location,borderList,origin,wait4,gameMap,angMat[x][y][:][:],dists[x][y][:][:])
-                        logging.debug('the_move worked')
+                        the_move = move(location,borderList,origin,wait4,gameMap,dists[x,y,:,:])
+                #        logging.debug('the_move worked')
         #                logging.debug(the_move)
                         if len(the_move) == 3:
                         #    logging.debug(i)
@@ -271,8 +202,9 @@ while True:
                             moves.append((the_move)[0])
                     #        logging.debug('move appended')
                     #j = j + 1
-    logging.debug('x y over')
+    #logging.debug('x y over')
     i = i + 1
+    gameMap2 = gameMap
 #    logging.debug(moves)
     sendFrame(moves)
-    logging.debug('Frame sent')
+    #logging.debug('Frame sent')
